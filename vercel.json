@@ -3,11 +3,6 @@
   "buildCommand": "npm run build",
   "installCommand": "npm install",
   "framework": "vite",
-  "functions": {
-    "api/*.js": {
-      "runtime": "@vercel/node@2.15.13"
-    }
-  },
   "routes": [
     {
       "src": "/api/(.*)",
