@@ -1,10 +1,10 @@
-// Simple test API endpoint for Vercel
+// Test API endpoint using ES modules syntax
 
-module.exports = (req, res) => {
-  // Set CORS headers
+export default function handler(req, res) {
+  // Set CORS headers and JSON response type
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Content-Type', 'application/json');
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -14,7 +14,9 @@ module.exports = (req, res) => {
   // Return a simple JSON response
   return res.status(200).json({
     success: true,
-    message: 'API endpoint is working!',
+    message: 'Test API is working',
+    method: req.method,
+    query: req.query,
     timestamp: new Date().toISOString()
   });
-}; 
+} 

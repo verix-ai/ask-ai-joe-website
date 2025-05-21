@@ -1,4 +1,4 @@
-// Vercel serverless function for Mailchimp
+// Vercel serverless function for Mailchimp using ES modules syntax
 
 // Helper to ensure we always return valid JSON
 const safeJsonResponse = (res, statusCode, data) => {
@@ -8,7 +8,7 @@ const safeJsonResponse = (res, statusCode, data) => {
 };
 
 // Main handler function
-module.exports = async (req, res) => {
+export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -30,25 +30,6 @@ module.exports = async (req, res) => {
 
   try {
     console.log('Mailchimp API endpoint triggered');
-    console.log('Request body type:', typeof req.body);
-    
-    // If request body is debug mode, return success without processing
-    if (req.body && req.body.debug === true) {
-      console.log('Debug mode detected, returning test response');
-      return safeJsonResponse(res, 200, {
-        success: true,
-        message: 'Debug mode successful',
-        receivedData: req.body,
-        environment: {
-          nodeEnv: process.env.NODE_ENV,
-          hasMailchimpVars: {
-            apiKey: !!process.env.MAILCHIMP_API_KEY,
-            listId: !!process.env.MAILCHIMP_LIST_ID,
-            serverPrefix: !!process.env.MAILCHIMP_SERVER_PREFIX
-          }
-        }
-      });
-    }
     
     // Parse request body if needed
     let data;
@@ -64,7 +45,7 @@ module.exports = async (req, res) => {
       });
     }
     
-    // Extract fields from both direct properties and mergeFields
+    // Extract fields
     const email = data.email;
     const name = data.name || (data.mergeFields && data.mergeFields.NAME);
     const phone = data.phone || (data.mergeFields && data.mergeFields.PHONE);
@@ -81,15 +62,15 @@ module.exports = async (req, res) => {
       });
     }
 
-    // For debugging purposes, just return a success response without calling Mailchimp
-    // Remove this in production when everything is working
+    // For now, return success without calling Mailchimp API
     return safeJsonResponse(res, 200, {
       success: true,
-      message: 'Test mode - Mailchimp API call skipped',
-      detail: `${email} would have been subscribed to Mailchimp (test mode).`,
+      message: 'Test mode - Form data received',
+      detail: `Form data for ${email} received successfully.`,
       formData: { email, name, phone, company, hasMessage: !!message },
       environment: {
         nodeEnv: process.env.NODE_ENV,
+        vercelEnv: process.env.VERCEL_ENV,
         hasMailchimpVars: {
           apiKey: !!process.env.MAILCHIMP_API_KEY,
           listId: !!process.env.MAILCHIMP_LIST_ID,
@@ -97,123 +78,6 @@ module.exports = async (req, res) => {
         }
       }
     });
-
-    /* Commented out for now to ensure we can return a valid response
-    // Get environment variables
-    const apiKey = process.env.MAILCHIMP_API_KEY;
-    const listId = process.env.MAILCHIMP_LIST_ID;
-    const serverPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
-
-    // Validate environment variables
-    console.log('Mailchimp env check:', {
-      hasApiKey: !!apiKey,
-      apiKeyMasked: apiKey ? apiKey.slice(0, 4) + '...' : undefined,
-      hasListId: !!listId,
-      hasServerPrefix: !!serverPrefix
-    });
-    
-    if (!apiKey || !listId || !serverPrefix) {
-      console.error('Missing Mailchimp configuration:', { 
-        hasApiKey: !!apiKey, 
-        hasListId: !!listId, 
-        hasServerPrefix: !!serverPrefix 
-      });
-      return safeJsonResponse(res, 500, { 
-        success: false, 
-        error: 'Server configuration error',
-        detail: 'Mailchimp is not properly configured on the server. Please check your environment variables.'
-      });
-    }
-    
-    try {
-      // Import the Mailchimp client inside the try block to catch any errors
-      const mailchimp = require('@mailchimp/mailchimp_marketing');
-      const crypto = require('crypto');
-      
-      // Configure Mailchimp client
-      mailchimp.setConfig({
-        apiKey: apiKey,
-        server: serverPrefix
-      });
-      
-      // Create MD5 hash of lowercase email for Mailchimp API
-      const emailHash = crypto.createHash('md5').update(email.toLowerCase()).digest('hex');
-      
-      // Prepare merge fields with correct mapping
-      const mergeFields = {};
-      if (name) mergeFields.NAME = name;
-      if (phone) mergeFields.PHONE = phone;
-      if (company) mergeFields.COMPANY = company;
-      if (message) mergeFields.MESSAGE = message;
-
-      // Prepare subscriber data
-      const subscriberData = {
-        email_address: email,
-        status: 'subscribed', // Use 'pending' if double opt-in is enabled
-        merge_fields: mergeFields
-      };
-
-      console.log(`Submitting to Mailchimp: ${email}`);
-      console.log('Mailchimp List ID:', listId);
-      console.log('Subscriber data:', JSON.stringify(subscriberData));
-
-      // Use the Mailchimp API client to add/update the member
-      const response = await mailchimp.lists.setListMember(
-        listId,
-        emailHash,
-        subscriberData
-      );
-      
-      console.log('Mailchimp API response:', response);
-      
-      // Handle successful response
-      console.log('Successfully subscribed to Mailchimp:', email);
-      return safeJsonResponse(res, 200, {
-        success: true,
-        status: "Success",
-        message: "Successfully subscribed!",
-        detail: `${email} has been added to the mailing list.`
-      });
-    } catch (err) {
-      console.error('Mailchimp API error:', err);
-      
-      // Handle the "already a member" case specially
-      if (err.status === 400 && err.response && err.response.text) {
-        try {
-          const errorBody = JSON.parse(err.response.text);
-          
-          if (errorBody.title === "Member Exists" || 
-              (errorBody.detail && errorBody.detail.toLowerCase().includes("already a list member"))) {
-            return safeJsonResponse(res, 200, {
-              success: true,
-              status: "Member Exists",
-              message: "Already subscribed",
-              detail: `${email} is already on the mailing list.`
-            });
-          }
-          
-          return safeJsonResponse(res, err.status, {
-            success: false,
-            error: errorBody.title || 'Subscription failed',
-            detail: errorBody.detail || 'Please check your details or try again later'
-          });
-        } catch (parseError) {
-          console.error('Error parsing Mailchimp error response:', parseError);
-          return safeJsonResponse(res, 502, {
-            success: false,
-            error: 'Error processing Mailchimp response',
-            detail: err.message || 'Unknown error'
-          });
-        }
-      }
-      
-      return safeJsonResponse(res, err.status || 502, {
-        success: false,
-        error: 'Mailchimp API error',
-        detail: err.message || 'Unknown error'
-      });
-    }
-    */
   } catch (error) {
     console.error('Server error:', error);
     return safeJsonResponse(res, 500, {
@@ -222,4 +86,4 @@ module.exports = async (req, res) => {
       detail: error.message || 'An unexpected error occurred'
     });
   }
-}; 
+} 

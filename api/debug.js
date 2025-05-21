@@ -1,10 +1,11 @@
-// Debug endpoint to check Vercel configuration
+// Debug endpoint to check Vercel configuration using ES modules
 
-module.exports = (req, res) => {
+export default function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Content-Type', 'application/json');
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
@@ -32,4 +33,4 @@ module.exports = (req, res) => {
     },
     timestamp: new Date().toISOString()
   });
-}; 
+} 

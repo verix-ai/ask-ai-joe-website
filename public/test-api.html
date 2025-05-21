@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>API Test Page</title>
+  <style>
+    body {
+      font-family: -apple-system, system-ui, sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    button {
+      background: #0070f3;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 4px;
+      margin-right: 10px;
+      cursor: pointer;
+    }
+    pre {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 4px;
+      overflow: auto;
+    }
+    .result {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <h1>API Test Page</h1>
+  
+  <div>
+    <h2>Test API Endpoints</h2>
+    <button id="testApi">Test Basic API</button>
+    <button id="testDebug">Test Debug API</button>
+    <button id="testMailchimp">Test Mailchimp API</button>
+  </div>
+  
+  <div class="result">
+    <h3>Result:</h3>
+    <pre id="result">Click a button to test an endpoint</pre>
+  </div>
+
+  <script>
+    const resultEl = document.getElementById('result');
+    
+    // Helper to format response
+    const formatResponse = async (response) => {
+      const headers = {};
+      response.headers.forEach((value, key) => {
+        headers[key] = value;
+      });
+      
+      let bodyText = await response.text();
+      let parsedBody = null;
+      try {
+        parsedBody = JSON.parse(bodyText);
+        bodyText = JSON.stringify(parsedBody, null, 2);
+      } catch (e) {
+        // Not JSON, keep as is
+      }
+      
+      return {
+        status: `${response.status} ${response.statusText}`,
+        headers,
+        body: bodyText
+      };
+    };
+
+    // Test the basic test endpoint
+    document.getElementById('testApi').addEventListener('click', async () => {
+      resultEl.textContent = 'Loading...';
+      try {
+        const response = await fetch('/api/test');
+        const formatted = await formatResponse(response);
+        resultEl.textContent = JSON.stringify(formatted, null, 2);
+      } catch (error) {
+        resultEl.textContent = `Error: ${error.message}`;
+      }
+    });
+    
+    // Test the debug endpoint
+    document.getElementById('testDebug').addEventListener('click', async () => {
+      resultEl.textContent = 'Loading...';
+      try {
+        const response = await fetch('/api/debug');
+        const formatted = await formatResponse(response);
+        resultEl.textContent = JSON.stringify(formatted, null, 2);
+      } catch (error) {
+        resultEl.textContent = `Error: ${error.message}`;
+      }
+    });
+    
+    // Test the Mailchimp endpoint
+    document.getElementById('testMailchimp').addEventListener('click', async () => {
+      resultEl.textContent = 'Loading...';
+      try {
+        const response = await fetch('/api/mailchimp-subscribe', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            email: 'test@example.com',
+            name: 'Test User',
+            company: 'Test Company'
+          })
+        });
+        const formatted = await formatResponse(response);
+        resultEl.textContent = JSON.stringify(formatted, null, 2);
+      } catch (error) {
+        resultEl.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html> 
