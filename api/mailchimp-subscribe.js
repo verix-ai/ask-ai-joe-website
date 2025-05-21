@@ -1,4 +1,6 @@
 // Vercel serverless function for Mailchimp using ES modules syntax
+import mailchimp from '@mailchimp/mailchimp_marketing';
+import crypto from 'crypto';
 
 // Helper to ensure we always return valid JSON
 const safeJsonResponse = (res, statusCode, data) => {
@@ -89,14 +91,6 @@ export default async function handler(req, res) {
     }
     
     try {
-      // Import Mailchimp and crypto using dynamic import (ES modules compatible)
-      const mailchimpModule = await import('@mailchimp/mailchimp_marketing');
-      const cryptoModule = await import('crypto');
-      
-      // Get the default export from the module
-      const mailchimp = mailchimpModule.default;
-      const crypto = cryptoModule.default;
-      
       // Configure Mailchimp client
       mailchimp.setConfig({
         apiKey: apiKey,
