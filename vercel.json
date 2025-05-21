@@ -3,7 +3,10 @@
   "builds": [
     {
       "src": "package.json",
-      "use": "@vercel/vite"
+      "use": "@vercel/static-build",
+      "config": {
+        "buildCommand": "npm run build"
+      }
     },
     {
       "src": "api/**/*.js",
@@ -14,6 +17,9 @@
     {
       "src": "/api/(.*)",
       "dest": "/api/$1.js"
+    },
+    {
+      "handle": "filesystem"
     },
     {
       "src": "/(.*)",
