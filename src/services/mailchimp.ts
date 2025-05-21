@@ -21,23 +21,19 @@ interface MailchimpResponse {
  */
 export const subscribeToMailchimp = async (data: SubscriberData): Promise<MailchimpResponse> => {
   try {
-    // Use the Netlify serverless function for real Mailchimp integration
-    // This works both in development (with netlify dev) and in production
+    // Support both Netlify and Vercel deployments
+    // Vercel uses /api/ for serverless functions
+    // Netlify uses the redirects in netlify.toml
     const PROXY_URL = '/api/mailchimp-subscribe';
     console.log('Mailchimp proxy URL:', PROXY_URL);
     
-    // With the serverless function approach, we don't need to access LIST_ID client-side
-    // The serverless function will handle all Mailchimp configuration
-    
-    // Prepare the data for the proxy - all we need is the form data
-    // The server will handle the list ID and API key
+    // Prepare the data for the proxy
     const proxyData = {
       email: data.email,
       name: data.name,
       phone: data.phone,
       company: data.company,
       message: data.message,
-      // We don't need to send a listId anymore - the serverless function will use the one from environment variables
       // Optional user information (for merge fields)
       mergeFields: {}
     };
@@ -117,8 +113,20 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
             detail: `${data.email} has been added to the mailing list.`
           };
         } else {
-          responseData = JSON.parse(rawResponseText);
-          console.log('Parsed response data:', responseData);
+          // Check if the response is JSON
+          try {
+            responseData = JSON.parse(rawResponseText);
+            console.log('Parsed response data:', responseData);
+          } catch (jsonError) {
+            // Handle non-JSON responses (like HTML error pages)
+            console.error('Received non-JSON response:', rawResponseText);
+            return {
+              success: false,
+              message: 'Invalid response',
+              error: 'Could not process the server response',
+              detail: `Unexpected token '${rawResponseText.substring(0, 20)}...' is not valid JSON`
+            };
+          }
         }
       } catch (parseError) {
         console.error('Error parsing Mailchimp response:', parseError);

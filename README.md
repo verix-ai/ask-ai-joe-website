@@ -1,73 +1,71 @@
-# Welcome to your Lovable project
+# AI Joe Insights - Middle Georgia AI Consultancy
 
-## Project info
+A modern web application for AI Joe Finkelstein's AI consulting services focused on serving Middle Georgia businesses.
 
-**URL**: https://lovable.dev/projects/637c79be-c127-48d3-9c8e-faef577a07d2
+## Project Overview
 
-## How can I edit this code?
+This React-based website showcases AI Joe's services, helping businesses and communities understand and implement AI solutions. The website includes:
 
-There are several ways of editing your application.
+- Information about AI consulting services
+- Blog articles about AI topics
+- Client testimonials
+- Contact form with Mailchimp integration
+- Modern, responsive design with shadcn/ui components
 
-**Use Lovable**
+## Tech Stack
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/637c79be-c127-48d3-9c8e-faef577a07d2) and start prompting.
+- **Frontend**: React with TypeScript
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Routing**: React Router
+- **State Management**: React Query
+- **Build Tool**: Vite
+- **Form Handling**: React Hook Form with Zod validation
+- **Database**: Supabase
+- **Deployment**: Netlify
 
-Changes made via Lovable will be committed automatically to this repo.
+## Development
 
-**Use your preferred IDE**
+To run this project locally:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+```bash
+# Install dependencies
+npm install
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Start the development server
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+For Netlify Functions development:
+```bash
+npm run dev:netlify
+```
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Build
 
-**Use GitHub Codespaces**
+To build the project for production:
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+```bash
+npm run build
+```
 
-## What technologies are used for this project?
+## Features
 
-This project is built with:
+- Modern, responsive UI with smooth animations
+- Blog article system
+- Contact form with Mailchimp integration
+- Testimonials section
+- Service offerings display
+- About section
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+## Project Structure
 
-## How can I deploy this project?
+- `/src/components`: UI components
+- `/src/pages`: Page components (Index, Article, NotFound)
+- `/src/services`: API services (Mailchimp)
+- `/src/hooks`: Custom React hooks
+- `/src/lib`: Utility functions
+- `/netlify/functions`: Serverless functions for backend operations
 
-Simply open [Lovable](https://lovable.dev/projects/637c79be-c127-48d3-9c8e-faef577a07d2) and click on Share -> Publish.
+## Contact
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+For more information about AI Joe Insights, visit [website] or contact Joe Finkelstein directly.
