@@ -69,12 +69,15 @@ export default async function handler(req, res) {
     const listId = process.env.MAILCHIMP_LIST_ID;
     const serverPrefix = process.env.MAILCHIMP_SERVER_PREFIX;
 
-    // Validate environment variables
-    console.log('Mailchimp env check:', {
+    // Enhanced debug logging for Mailchimp credentials
+    console.log('Mailchimp credentials check:', {
       hasApiKey: !!apiKey,
-      apiKeyMasked: apiKey ? apiKey.slice(0, 4) + '...' : undefined,
-      hasListId: !!listId,
-      hasServerPrefix: !!serverPrefix
+      apiKeyLength: apiKey ? apiKey.length : 0,
+      apiKeyFirst4: apiKey ? apiKey.substring(0, 4) : null,
+      apiKeyLast4: apiKey ? apiKey.substring(apiKey.length - 4) : null,
+      listIdLength: listId ? listId.length : 0,
+      listIdValue: listId || 'not set',
+      serverPrefixValue: serverPrefix || 'not set'
     });
     
     if (!apiKey || !listId || !serverPrefix) {
@@ -97,6 +100,8 @@ export default async function handler(req, res) {
         server: serverPrefix
       });
       
+      console.log('Mailchimp client configured with server:', serverPrefix);
+      
       // Create MD5 hash of lowercase email for Mailchimp API
       const emailHash = crypto.createHash('md5').update(email.toLowerCase()).digest('hex');
       
@@ -118,6 +123,16 @@ export default async function handler(req, res) {
       console.log('Mailchimp List ID:', listId);
       console.log('Subscriber data:', JSON.stringify(subscriberData));
 
+      // First try a simple ping to test API connectivity
+      try {
+        console.log('Testing Mailchimp API connectivity...');
+        const pingResult = await mailchimp.ping.get();
+        console.log('Mailchimp ping successful:', pingResult);
+      } catch (pingError) {
+        console.error('Mailchimp ping failed:', pingError);
+        // Continue anyway to get the specific error from the actual API call
+      }
+
       // Use the Mailchimp API client to add/update the member
       const response = await mailchimp.lists.setListMember(
         listId,
@@ -137,6 +152,17 @@ export default async function handler(req, res) {
       });
     } catch (err) {
       console.error('Mailchimp API error:', err);
+      console.error('Error details:', JSON.stringify({
+        status: err.status,
+        title: err.title,
+        detail: err.detail,
+        instance: err.instance,
+        response: err.response ? {
+          text: err.response.text,
+          status: err.response.status
+        } : 'No response data',
+        stack: err.stack
+      }));
       
       // Handle the "already a member" case specially
       if (err.status === 400 && err.response && err.response.text) {
@@ -166,6 +192,15 @@ export default async function handler(req, res) {
             detail: err.message || 'Unknown error'
           });
         }
+      }
+      
+      // Handle unauthorized errors with more detailed information
+      if (err.status === 401) {
+        return safeJsonResponse(res, 401, {
+          success: false,
+          error: 'Mailchimp API error: Unauthorized',
+          detail: 'API key or server prefix may be incorrect. Please check your Mailchimp credentials.'
+        });
       }
       
       return safeJsonResponse(res, err.status || 502, {
