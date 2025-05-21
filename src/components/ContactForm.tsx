@@ -16,6 +16,7 @@ const ContactForm: React.FC = () => {
   });
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -44,14 +45,9 @@ const ContactForm: React.FC = () => {
       } else {
         console.log('Successfully subscribed to Mailchimp:', response);
         
-        toast({
-          title: response.message,
-          description: response.detail || "You've been added to our mailing list.",
-          className: "bg-green-500 text-white",
-        });
-        
-        // Clear the form on success
+        // No toast message on success, just clear the form
         setFormData({ name: '', email: '', phone: '', company: '', message: '' });
+        setSubmitted(true);
       }
     } catch (e: any) {
       console.error('Unexpected error during form submission:', e);
@@ -64,6 +60,15 @@ const ContactForm: React.FC = () => {
       setIsSubmitting(false);
     }
   };
+
+  if (submitted) {
+    return (
+      <div className="text-center p-8 bg-muted rounded-lg">
+        <h3 className="text-xl font-semibold mb-2">Thank you for your message!</h3>
+        <p>We've received your information and will be in touch soon.</p>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
