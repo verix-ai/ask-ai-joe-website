@@ -1,0 +1,19 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Dev command for netlify dev
+[dev]
+  command = "npm run dev"
+  port = 8888
+  targetPort = 8080
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Redirect API requests to the serverless function
+[[redirects]]
+  from = "/api/mailchimp-subscribe"
+  to = "/.netlify/functions/mailchimp-subscribe"
+  status = 200
+  force = true

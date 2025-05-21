@@ -1,0 +1,20 @@
+{
+	"geolocation": {
+		"data": {
+			"city": "Decatur",
+			"country": {
+				"code": "US",
+				"name": "United States"
+			},
+			"subdivision": {
+				"code": "GA",
+				"name": "Georgia"
+			},
+			"timezone": "America/New_York",
+			"latitude": 33.8088,
+			"longitude": -84.2815,
+			"postalCode": "30033"
+		},
+		"timestamp": 1747843426007
+	}
+}
