@@ -3,6 +3,9 @@
 const mailchimp = require('@mailchimp/mailchimp_marketing');
 const crypto = require('crypto');
 
+/**
+ * Vercel serverless function handler
+ */
 export default async function handler(req, res) {
   // Set CORS headers
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,8 +14,7 @@ export default async function handler(req, res) {
 
   // Handle preflight OPTIONS request
   if (req.method === 'OPTIONS') {
-    res.status(204).end();
-    return;
+    return res.status(204).end();
   }
 
   // Only allow POST requests
@@ -21,9 +23,21 @@ export default async function handler(req, res) {
   }
 
   try {
+    console.log('API endpoint triggered');
+    
     // Parse request body (Vercel automatically parses JSON)
-    const data = req.body;
-    console.log('Parsed data:', data);
+    let data;
+    try {
+      data = typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+      console.log('Parsed data:', data);
+    } catch (parseError) {
+      console.error('Error parsing request body:', parseError);
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Invalid JSON', 
+        detail: parseError.message 
+      });
+    }
     
     // Extract fields from both direct properties and mergeFields
     const email = data.email;
@@ -54,9 +68,7 @@ export default async function handler(req, res) {
       hasApiKey: !!apiKey,
       apiKeyMasked: apiKey ? apiKey.slice(0, 4) + '...' : undefined,
       hasListId: !!listId,
-      listId,
-      hasServerPrefix: !!serverPrefix,
-      serverPrefix
+      hasServerPrefix: !!serverPrefix
     });
     
     if (!apiKey || !listId || !serverPrefix) {
@@ -124,24 +136,33 @@ export default async function handler(req, res) {
       
       // Handle the "already a member" case specially
       if (err.status === 400 && err.response && err.response.body) {
-        const errorBody = JSON.parse(err.response.text || '{}');
-        
-        if (errorBody.title === "Member Exists" || 
-            (errorBody.detail && errorBody.detail.toLowerCase().includes("already a list member"))) {
-          return res.status(200).json({
-            success: true,
-            status: "Member Exists",
-            message: "Already subscribed",
-            detail: `${email} is already on the mailing list.`
+        try {
+          const errorBody = JSON.parse(err.response.text || '{}');
+          
+          if (errorBody.title === "Member Exists" || 
+              (errorBody.detail && errorBody.detail.toLowerCase().includes("already a list member"))) {
+            return res.status(200).json({
+              success: true,
+              status: "Member Exists",
+              message: "Already subscribed",
+              detail: `${email} is already on the mailing list.`
+            });
+          }
+          
+          return res.status(err.status).json({
+            success: false,
+            error: errorBody.title || 'Subscription failed',
+            detail: errorBody.detail || 'Please check your details or try again later',
+            mailchimpResponse: errorBody
+          });
+        } catch (parseError) {
+          console.error('Error parsing Mailchimp error response:', parseError);
+          return res.status(502).json({
+            success: false,
+            error: 'Error processing Mailchimp response',
+            detail: err.message || 'Unknown error'
           });
         }
-        
-        return res.status(err.status).json({
-          success: false,
-          error: errorBody.title || 'Subscription failed',
-          detail: errorBody.detail || 'Please check your details or try again later',
-          mailchimpResponse: errorBody
-        });
       }
       
       return res.status(err.status || 502).json({
