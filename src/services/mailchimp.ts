@@ -22,8 +22,7 @@ interface MailchimpResponse {
 export const subscribeToMailchimp = async (data: SubscriberData): Promise<MailchimpResponse> => {
   try {
     // Support both Netlify and Vercel deployments
-    // Vercel uses /api/ for serverless functions
-    // Netlify uses the redirects in netlify.toml
+    // All requests go to /api/mailchimp-subscribe
     const PROXY_URL = '/api/mailchimp-subscribe';
     console.log('Mailchimp proxy URL:', PROXY_URL);
     
@@ -72,12 +71,17 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
     try {
       // Make the request to the proxy
       console.log('Making fetch request to:', PROXY_URL);
+
+      // Log the stringified request body for debugging
+      const requestBody = JSON.stringify(proxyData);
+      console.log('Request body:', requestBody);
+      
       const response = await fetch(PROXY_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(proxyData)
+        body: requestBody
       });
       
       console.log('Received response from proxy:', response);
@@ -120,6 +124,18 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
           } catch (jsonError) {
             // Handle non-JSON responses (like HTML error pages)
             console.error('Received non-JSON response:', rawResponseText);
+            
+            // Handle case where we got an HTML response (likely a 404)
+            if (rawResponseText.includes('<html') || rawResponseText.includes('<!DOCTYPE')) {
+              console.error('Received HTML response instead of JSON');
+              return {
+                success: false,
+                message: 'API endpoint error',
+                error: `Server returned HTML instead of JSON (status: ${response.status})`,
+                detail: 'Please check server API endpoint configuration'
+              };
+            }
+            
             return {
               success: false,
               message: 'Invalid response',
