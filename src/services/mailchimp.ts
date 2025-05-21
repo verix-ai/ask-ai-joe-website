@@ -13,6 +13,7 @@ interface MailchimpResponse {
   message: string;
   error?: string;
   detail?: string;
+  debugInfo?: any;
 }
 
 /**
@@ -21,8 +22,7 @@ interface MailchimpResponse {
  */
 export const subscribeToMailchimp = async (data: SubscriberData): Promise<MailchimpResponse> => {
   try {
-    // Support both Netlify and Vercel deployments
-    // All requests go to /api/mailchimp-subscribe
+    // Constants
     const PROXY_URL = '/api/mailchimp-subscribe';
     console.log('Mailchimp proxy URL:', PROXY_URL);
     
@@ -69,20 +69,19 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
     console.log('Sending subscription request to Mailchimp proxy:', proxyData);
     
     try {
-      // Make the request to the proxy
-      console.log('Making fetch request to:', PROXY_URL);
-
-      // Log the stringified request body for debugging
-      const requestBody = JSON.stringify(proxyData);
-      console.log('Request body:', requestBody);
-      
-      const response = await fetch(PROXY_URL, {
+      // Log everything for debugging
+      const requestDetails = {
+        url: PROXY_URL,
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: requestBody
-      });
+        body: JSON.stringify(proxyData)
+      };
+      console.log('Making fetch request with:', requestDetails);
+      
+      // Make the request to the proxy
+      const response = await fetch(PROXY_URL, requestDetails);
       
       console.log('Received response from proxy:', response);
       console.log('Response status:', response.status);
@@ -125,6 +124,9 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
             // Handle non-JSON responses (like HTML error pages)
             console.error('Received non-JSON response:', rawResponseText);
             
+            // Extract the first 200 characters for a more useful error message
+            const snippet = rawResponseText.substring(0, 200);
+            
             // Handle case where we got an HTML response (likely a 404)
             if (rawResponseText.includes('<html') || rawResponseText.includes('<!DOCTYPE')) {
               console.error('Received HTML response instead of JSON');
@@ -132,7 +134,14 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
                 success: false,
                 message: 'API endpoint error',
                 error: `Server returned HTML instead of JSON (status: ${response.status})`,
-                detail: 'Please check server API endpoint configuration'
+                detail: 'Please check server API endpoint configuration',
+                debugInfo: {
+                  url: PROXY_URL,
+                  status: response.status,
+                  statusText: response.statusText,
+                  contentType: response.headers.get('content-type'),
+                  responseSnippet: snippet
+                }
               };
             }
             
@@ -140,7 +149,14 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
               success: false,
               message: 'Invalid response',
               error: 'Could not process the server response',
-              detail: `Unexpected token '${rawResponseText.substring(0, 20)}...' is not valid JSON`
+              detail: `Unexpected token in JSON at position ${jsonError.message}`,
+              debugInfo: {
+                url: PROXY_URL,
+                status: response.status,
+                statusText: response.statusText,
+                contentType: response.headers.get('content-type'),
+                responseSnippet: snippet
+              }
             };
           }
         }
@@ -151,7 +167,14 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
           success: false,
           message: 'Parsing error',
           error: 'Could not process the server response',
-          detail: parseError instanceof Error ? parseError.message : 'Invalid server response'
+          detail: parseError instanceof Error ? parseError.message : 'Invalid server response',
+          debugInfo: {
+            url: PROXY_URL,
+            status: response.status,
+            statusText: response.statusText,
+            contentType: response.headers.get('content-type'),
+            responseSnippet: rawResponseText.substring(0, 200)
+          }
         };
       }
       
@@ -184,8 +207,8 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
       
       return {
         success: true,
-        message: 'Successfully subscribed!',
-        detail: 'You have been added to our mailing list.'
+        message: responseData.message || 'Successfully subscribed!',
+        detail: responseData.detail || 'You have been added to our mailing list.'
       };
     } catch (error) {
       console.error('Network or other error during Mailchimp API call:', error);
@@ -193,7 +216,11 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
         success: false,
         message: 'Connection error',
         error: 'Failed to connect to subscription service',
-        detail: error instanceof Error ? error.message : 'Unknown connection error'
+        detail: error instanceof Error ? error.message : 'Unknown connection error',
+        debugInfo: {
+          url: PROXY_URL,
+          error: error instanceof Error ? error.stack : String(error)
+        }
       };
     }
     
@@ -203,7 +230,10 @@ export const subscribeToMailchimp = async (data: SubscriberData): Promise<Mailch
       success: false,
       message: 'Subscription error',
       error: 'An unexpected error occurred',
-      detail: error instanceof Error ? error.message : 'Please try again later'
+      detail: error instanceof Error ? error.message : 'Please try again later',
+      debugInfo: {
+        error: error instanceof Error ? error.stack : String(error)
+      }
     };
   }
 };
