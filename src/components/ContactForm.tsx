@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { subscribeToMailchimp } from '@/services/mailchimp';
 
 const ContactForm: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -17,9 +16,6 @@ const ContactForm: React.FC = () => {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  // With our serverless function approach, we no longer need client-side environment variables
-  // The Mailchimp configuration is now handled by the server
-
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
@@ -28,30 +24,35 @@ const ContactForm: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
 
-    // We no longer need to check for client-side configuration
-
     console.log('Form submitted with data:', formData);
 
     try {
-      console.log('Calling subscribeToMailchimp...');
-      // Call our direct Mailchimp service
-      const response = await subscribeToMailchimp(formData);
-      console.log('Got response from subscribeToMailchimp:', response);
-
-      if (!response.success) {
-        console.error('Error subscribing to Mailchimp:', response.error);
+      // Use Formspree instead of our custom API
+      const response = await fetch('https://formspree.io/f/xjvnpyqd', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(formData)
+      });
+      
+      console.log('Formspree response:', response);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('Formspree error:', errorText);
         
         toast({
-          title: response.error || 'Subscription Failed',
-          description: response.detail || 'An error occurred during subscription. Please try again.',
+          title: 'Submission Failed',
+          description: 'An error occurred during form submission. Please try again.',
           variant: "destructive",
         });
       } else {
-        console.log('Successfully subscribed to Mailchimp:', response);
+        console.log('Form submitted successfully');
         
         toast({
-          title: response.message,
-          description: response.detail || "You've been added to our mailing list.",
+          title: 'Message Sent!',
+          description: "Thank you for your message. We'll be in touch soon.",
           className: "bg-green-500 text-white",
         });
         
