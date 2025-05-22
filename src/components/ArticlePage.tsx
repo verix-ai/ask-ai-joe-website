@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
@@ -196,6 +196,11 @@ And if you're wondering whether AI belongs in your life, your job, or your court
 const ArticlePage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
   const article = articles.find(a => a.slug === slug);
+
+  // Scroll to top when component mounts
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [slug]);
 
   if (!article) {
     return (
